@@ -39,6 +39,9 @@ resource "aws_db_instance" "this" {
   performance_insights_enabled = var.rds_performance_insights_enabled
   storage_encrypted            = var.rds_instance_storage_encrypted
 
+  backup_retention_period = var.rds_backup_retention_period
+  backup_window           = var.rds_backup_window
+
   skip_final_snapshot = true
   apply_immediately   = true
 }

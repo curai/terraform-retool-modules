@@ -202,6 +202,18 @@ variable "rds_instance_storage_encrypted" {
   description = "Whether the RDS instance should have storage encrypted. Defaults to false."
 }
 
+variable "rds_backup_retention_period" {
+  type        = number
+  default     = 0
+  description = "Sets RDS retention period for backups. Defaults to 0."
+}
+
+variable "rds_backup_window" {
+  type        = string
+  default     = null
+  description = "Sets the RDS backup window if provided"
+}
+
 variable "use_exising_temporal_cluster" {
   type        = bool
   default     = false
