@@ -8,7 +8,7 @@ This module deploys an ECS cluster with autoscaling group of EC2 instances.
 
 ```
 module "retool" {
-    source = "git@github.com:tryretool/retool-terraform.git//modules/aws_ecs"
+    source = "git@github.com:tryretool/terraform-retool-modules.git//modules/aws_ecs"
 
     aws_region = "<your-aws-region>"
     vpc_id = "<your-vpc-id>"
@@ -100,6 +100,15 @@ container_egress_rules = [
     }
 ]
 ```
+
+### Telemetry
+**Note: telemetry collection is currently supported only on Fargate clusters.**
+
+To enable telemetry collection, set the variable `telemetry_enabled` to `true` (see [variables.tf](variables.tf#L340)).
+You may also enable forwarding telemetry data to Retool by setting the variable `telemetry_send_to_retool` to `true`.
+
+Similar to Helm deployments, [custom configuration](https://docs.retool.com/self-hosted/guides/telemetry#send-telemetry-data-to-custom-destinations) may be passed into the Retool telemetry collector.
+To use custom configuration, set [`telemetry_use_custom_config`](variables.tf#L352) to `true`, and supply your custom config in the file named in [`telemetry_custom_config_path`](variables.tf#L358).
 
 ### Environment Variables
 

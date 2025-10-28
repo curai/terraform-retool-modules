@@ -27,8 +27,8 @@ variable "ssh_key_name" {
 
 variable "instance_type" {
   type        = string
-  description = "ECS cluster instance type. Defaults to `t2.large`"
-  default     = "t2.large"
+  description = "ECS cluster instance type. Defaults to `t3.xlarge`"
+  default     = "t3.xlarge"
 }
 
 variable "max_instance_count" {
@@ -113,6 +113,12 @@ variable "rds_performance_insights_retention_period" {
   type        = number
   default     = 14
   description = "The time in days to retain Performance Insights for RDS. Defaults to 14."
+}
+
+variable "rds_multi_az" {
+  type        = bool
+  default     = false
+  description = "Whether the RDS instance should have Multi-AZ enabled. Defaults to false."
 }
 
 variable "log_retention_in_days" {
