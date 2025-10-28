@@ -33,8 +33,8 @@ variable "ssh_key_name" {
 
 variable "instance_type" {
   type        = string
-  description = "ECS cluster instance type. Defaults to `t2.large`"
-  default     = "t2.large"
+  description = "ECS cluster instance type. Defaults to `t3.xlarge`"
+  default     = "t3.xlarge"
 }
 
 variable "max_instance_count" {
@@ -55,6 +55,12 @@ variable "deployment_name" {
   default     = "retool"
 }
 
+variable "service_discovery_namespace" {
+  type        = string
+  description = "Service discovery namespace DNS name. Default is based on deployment name (see locals.tf)."
+  default     = ""
+}
+
 variable "task_propagate_tags" {
   type        = string
   description = "Which resource to propagate tags from for ECS service tasks. Defaults to `TASK_DEFINITION`"
@@ -69,14 +75,26 @@ variable "retool_license_key" {
 
 variable "ecs_retool_image" {
   type        = string
-  description = "Container image for desired Retool version. Defaults to `3.28.7`"
-  default     = "tryretool/backend:3.28.7"
+  description = "Container image for desired Retool version. Defaults to `3.114.2-stable`"
+  default     = "tryretool/backend:3.114.2-stable"
 }
 
 variable "ecs_code_executor_image" {
   type        = string
-  description = "Container image for desired code_executor version. Defaults to `3.28.7`"
-  default     = "tryretool/code-executor-service:3.28.7"
+  description = "Container image for desired code_executor version. Defaults to `3.114.2-stable`"
+  default     = "tryretool/code-executor-service:3.114.2-stable"
+}
+
+variable "ecs_telemetry_image" {
+  type        = string
+  description = "Container image for desired telemetry sidecar version. Defaults to same version as ecs_retool_image (see locals.tf)."
+  default     = ""
+}
+
+variable "ecs_telemetry_fluentbit_image" {
+  type        = string
+  description = "Container image for desired fluent-bit sidecar version. Defaults to same version as ecs_retool_image (see locals.tf)."
+  default     = "tryretool/retool-aws-for-fluent-bit:3.120.0-edge"
 }
 
 variable "ecs_task_resource_map" {
@@ -101,10 +119,17 @@ variable "ecs_task_resource_map" {
       cpu    = 2048
       memory = 4096
     }
-
     code_executor = {
-      cpu = 2048
+      cpu    = 2048
       memory = 4096
+    }
+    telemetry = {
+      cpu    = 1024
+      memory = 2048
+    }
+    fluentbit = {
+      cpu    = 512
+      memory = 1024
     }
   }
   description = "Amount of CPU and Memory provisioned for each task."
@@ -112,8 +137,8 @@ variable "ecs_task_resource_map" {
 
 variable "temporal_ecs_task_resource_map" {
   type = map(object({
-      cpu    = number
-      memory = number
+    cpu    = number
+    memory = number
   }))
   default = {
     frontend = {
@@ -162,13 +187,13 @@ variable "rds_instance_class" {
 
 variable "rds_instance_engine_version" {
   type        = string
-  default     = "13.7"
-  description = "Version of the Postgres RDS instance. Defaults to 13.7"
+  default     = "15.10"
+  description = "Version of the Postgres RDS instance. Defaults to 15.10"
 }
 
 variable "rds_instance_auto_minor_version_upgrade" {
-  type = bool
-  default = true
+  type        = bool
+  default     = true
   description = "Whether to automatically upgrade the minor version of the Postgres RDS instance. Defaults to true."
 }
 
@@ -214,7 +239,38 @@ variable "rds_backup_window" {
   description = "Sets the RDS backup window if provided"
 }
 
-variable "use_exising_temporal_cluster" {
+variable "rds_allocated_storage" {
+  type        = number
+  default     = 80
+  description = "The allocated storage in gibibytes. Defaults to 80"
+}
+
+variable "rds_storage_type" {
+  type        = string
+  default     = "gp2"
+  description = "The storage volume type (standard, gp2, gp3, io1, or io2). Defaults to gp2"
+}
+
+variable "rds_storage_throughput" {
+  type        = number
+  default     = null
+  description = "The storage throughput (only valid when using rds_storage_type = gp3)"
+
+}
+
+variable "rds_iops" {
+  type        = number
+  default     = null
+  description = "The storage provisioned IOPS  (only valid when using rds_storage_type = io1, io2, or gp3)"
+}
+
+variable "rds_multi_az" {
+  type        = bool
+  default     = false
+  description = "Whether the RDS instance should have Multi-AZ enabled. Defaults to false."
+}
+
+variable "use_existing_temporal_cluster" {
   type        = bool
   default     = false
   description = "Whether to use an already existing Temporal Cluster. Defaults to false. Set to true and set temporal_cluster_config if you already have a Temporal cluster you want to use with Retool."
@@ -233,7 +289,7 @@ variable "launch_type" {
 # namescape: temporal namespace to use for Retool Workflows. We recommend this is only used by Retool.
 # If use_existing_temporal_cluster == true this should be config for currently existing cluster. 
 # If use_existing_temporal_cluster == false, you should use the defaults.
-# host: hostname for Temporal Frontend service
+# hostname: hostname for Temporal Frontend service
 # port: port for Temporal Frontend service
 # tls_enabled: Whether to use tls when connecting to Temporal Frontend. For mTLS, configure tls_crt and tls_key.
 # tls_crt: For mTLS only. Base64 encoded string of public tls certificate
@@ -241,7 +297,7 @@ variable "launch_type" {
 variable "temporal_cluster_config" {
   type = object({
     namespace   = string
-    host        = string
+    hostname    = string
     port        = string
     tls_enabled = bool
     tls_crt     = optional(string)
@@ -250,7 +306,7 @@ variable "temporal_cluster_config" {
 
   default = {
     namespace   = "workflows"
-    host        = "temporal.retoolsvc"
+    hostname    = "temporal"
     port        = "7233"
     tls_enabled = false
   }
@@ -282,8 +338,8 @@ variable "temporal_aurora_performance_insights_retention_period" {
 
 variable "temporal_aurora_engine_version" {
   type        = string
-  default     = "14.5"
-  description = "Engine version for Temporal Aurora. Defaults to 14.5."
+  default     = "15.10"
+  description = "Engine version for Temporal Aurora. Defaults to 15.10."
 }
 
 variable "temporal_aurora_serverless_min_capacity" {
@@ -298,11 +354,29 @@ variable "temporal_aurora_serverless_max_capacity" {
   description = "Maximum capacity for Temporal Aurora Serverless. Defaults to 10."
 }
 
+variable "temporal_aurora_backup_retention_period" {
+  type        = number
+  default     = 7
+  description = "Number of days to retain backups for Temporal Aurora. Defaults to 7."
+}
+
+variable "temporal_aurora_preferred_backup_window" {
+  type        = string
+  default     = "03:00-04:00"
+  description = "Preferred backup window for Temporal Aurora. Defaults to 03:00-04:00."
+}
+
 variable "temporal_aurora_instances" {
   type = any
   default = {
     one = {}
   }
+}
+
+variable "temporal_image" {
+  type        = string
+  description = "Docker image for Temporal"
+  default     = "tryretool/one-offs:retool-temporal-1.1.5"
 }
 
 variable "workflows_enabled" {
@@ -315,6 +389,36 @@ variable "code_executor_enabled" {
   type        = bool
   default     = false
   description = "Whether to enable code_executor service to support Python execution. Defaults to false."
+}
+
+variable "telemetry_enabled" {
+  type        = bool
+  default     = false
+  description = "Whether to enable on-prem telemetry. Defaults to false."
+}
+
+variable "telemetry_send_to_retool" {
+  type        = bool
+  default     = true
+  description = "Whether to send telemetry data to Retool. Defaults to true."
+}
+
+variable "telemetry_use_custom_config" {
+  type        = bool
+  default     = false
+  description = "Whether to use custom Vector configuration. Defaults to false."
+}
+
+variable "telemetry_custom_config_path" {
+  type        = string
+  default     = "vector-custom.yaml"
+  description = "Path to custom Vector configuration file for Retool telemetry. Defaults to vector-custom.yaml."
+}
+
+variable "enable_execute_command" {
+  type        = bool
+  default     = false
+  description = "Whether to enable command execution on containers (for debugging). Defaults to false."
 }
 
 variable "log_retention_in_days" {
@@ -509,4 +613,10 @@ variable "alb_egress_rules" {
     }
   ]
   description = "Egress rules for load balancer"
+}
+
+variable "iam_partition" {
+  type        = string
+  description = "AWS Commercial accounts use 'aws'. AWS GovCloud accounts use 'aws-us-gov'"
+  default     = "aws"
 }

@@ -9,10 +9,27 @@ data "aws_iam_policy_document" "task_role_assume_policy" {
   }
 }
 
+data "aws_iam_policy_document" "task_role_policy" {
+  statement {
+    actions = [
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel",
+    ]
+    resources = ["*"]
+  }
+}
+
 resource "aws_iam_role" "task_role" {
   name               = "${var.deployment_name}-task-role"
   assume_role_policy = data.aws_iam_policy_document.task_role_assume_policy.json
   path               = "/"
+
+  inline_policy {
+    name   = "${var.deployment_name}-task-policy"
+    policy = data.aws_iam_policy_document.task_role_policy.json
+  }
 }
 
 data "aws_iam_policy_document" "service_role_assume_policy" {
@@ -73,7 +90,7 @@ resource "aws_iam_role" "execution_role" {
 resource "aws_iam_role_policy_attachment" "execution_role" {
   count      = var.launch_type == "FARGATE" ? 1 : 0
   role       = aws_iam_role.execution_role[0].name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+  policy_arn = "arn:${var.iam_partition}:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 # IAM Role for EC2 instances
