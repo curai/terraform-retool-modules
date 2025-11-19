@@ -29,6 +29,7 @@ resource "aws_db_instance" "this" {
   engine                       = "postgres"
   engine_version               = var.rds_instance_engine_version
   auto_minor_version_upgrade   = var.rds_instance_auto_minor_version_upgrade
+  allow_major_version_upgrade  = var.rds_instance_allow_major_version_upgrade
   db_name                      = "hammerhead_production"
   username                     = aws_secretsmanager_secret_version.rds_username.secret_string
   password                     = aws_secretsmanager_secret_version.rds_password.secret_string
