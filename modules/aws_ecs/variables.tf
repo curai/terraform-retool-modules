@@ -197,6 +197,12 @@ variable "rds_instance_auto_minor_version_upgrade" {
   description = "Whether to automatically upgrade the minor version of the Postgres RDS instance. Defaults to true."
 }
 
+variable "rds_instance_allow_major_version_upgrade" {
+  type        = bool
+  default     = false
+  description = "Whether to allow major version upgrades for the Postgres RDS instance. Defaults to false."
+}
+
 variable "rds_publicly_accessible" {
   type        = bool
   default     = false
