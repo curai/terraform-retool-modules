@@ -62,6 +62,11 @@ resource "aws_ecs_service" "retool" {
   propagate_tags                     = var.task_propagate_tags
   enable_execute_command             = var.enable_execute_command
 
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
   load_balancer {
     target_group_arn = aws_lb_target_group.this.arn
     container_name   = "retool"
@@ -96,6 +101,11 @@ resource "aws_ecs_service" "jobs_runner" {
   propagate_tags         = var.task_propagate_tags
   enable_execute_command = var.enable_execute_command
 
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
   # Need to explictly set this in aws_ecs_service to avoid destructive behavior: https://github.com/hashicorp/terraform-provider-aws/issues/22823
   capacity_provider_strategy {
     base              = 1
@@ -124,6 +134,11 @@ resource "aws_ecs_service" "workflows_backend" {
   task_definition        = aws_ecs_task_definition.retool_workflows_backend[0].arn
   propagate_tags         = var.task_propagate_tags
   enable_execute_command = var.enable_execute_command
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
 
   # Need to explictly set this in aws_ecs_service to avoid destructive behavior: https://github.com/hashicorp/terraform-provider-aws/issues/22823
   capacity_provider_strategy {
@@ -158,6 +173,11 @@ resource "aws_ecs_service" "workflows_worker" {
   propagate_tags         = var.task_propagate_tags
   enable_execute_command = var.enable_execute_command
 
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
   # Need to explictly set this in aws_ecs_service to avoid destructive behavior: https://github.com/hashicorp/terraform-provider-aws/issues/22823
   capacity_provider_strategy {
     base              = 1
@@ -185,6 +205,11 @@ resource "aws_ecs_service" "code_executor" {
   desired_count          = 1
   task_definition        = aws_ecs_task_definition.retool_code_executor[0].arn
   enable_execute_command = var.enable_execute_command
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
 
   # Need to explictly set this in aws_ecs_service to avoid destructive behavior: https://github.com/hashicorp/terraform-provider-aws/issues/22823
   capacity_provider_strategy {
@@ -218,6 +243,11 @@ resource "aws_ecs_service" "telemetry" {
   task_definition        = aws_ecs_task_definition.retool_telemetry[0].arn
   propagate_tags         = var.task_propagate_tags
   enable_execute_command = var.enable_execute_command
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
 
   # Need to explictly set this in aws_ecs_service to avoid destructive behavior: https://github.com/hashicorp/terraform-provider-aws/issues/22823
   capacity_provider_strategy {
