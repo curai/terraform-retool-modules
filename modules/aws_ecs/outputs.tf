@@ -57,3 +57,33 @@ output "iam_task_role_name" {
   value       = aws_iam_role.task_role.name
   description = "IAM role name for all ECS tasks"
 }
+
+output "ecs_service_retool_id" {
+  value       = aws_ecs_service.retool.id
+  description = "ID of the main Retool ECS service"
+}
+
+output "ecs_service_jobs_runner_id" {
+  value       = aws_ecs_service.jobs_runner.id
+  description = "ID of the jobs runner ECS service"
+}
+
+output "ecs_service_workflows_backend_id" {
+  value       = var.workflows_enabled ? aws_ecs_service.workflows_backend[0].id : null
+  description = "ID of the workflows backend ECS service"
+}
+
+output "ecs_service_workflows_worker_id" {
+  value       = var.workflows_enabled ? aws_ecs_service.workflows_worker[0].id : null
+  description = "ID of the workflows worker ECS service"
+}
+
+output "ecs_service_code_executor_id" {
+  value       = var.code_executor_enabled ? aws_ecs_service.code_executor[0].id : null
+  description = "ID of the code executor ECS service"
+}
+
+output "ecs_service_telemetry_id" {
+  value       = var.telemetry_enabled ? aws_ecs_service.telemetry[0].id : null
+  description = "ID of the telemetry ECS service"
+}
