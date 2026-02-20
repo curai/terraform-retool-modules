@@ -9,22 +9,33 @@ data "aws_iam_policy_document" "task_role_assume_policy" {
   }
 }
 
-# data "aws_iam_policy_document" "task_role_policy" {
-#   statement {
-#     actions = [
-#       "ssmmessages:CreateControlChannel",
-#       "ssmmessages:CreateDataChannel",
-#       "ssmmessages:OpenControlChannel",
-#       "ssmmessages:OpenDataChannel",
-#     ]
-#     resources = ["*"]
-#   }
-# }
-
 resource "aws_iam_role" "task_role" {
   name               = "${var.deployment_name}-task-role"
   assume_role_policy = data.aws_iam_policy_document.task_role_assume_policy.json
   path               = "/"
+}
+
+resource "aws_iam_role_policy" "retool_task_role_policy" {
+  name = "retool-task-role-policy"
+  role = aws_iam_role.task_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ],
+        "Resource" : ["arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:${var.secrets_namespace}/*"]
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : ["secretsmanager:ListSecrets"],
+        "Resource" : "*"
+      }
+    ]
+  })
 }
 
 data "aws_iam_policy_document" "service_role_assume_policy" {

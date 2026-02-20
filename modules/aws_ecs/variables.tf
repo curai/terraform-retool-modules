@@ -4,6 +4,11 @@ variable "aws_region" {
   description = "AWS region. Defaults to `us-east-1`"
 }
 
+variable "aws_account_id" {
+  type        = string
+  description = "AWS account ID"
+}
+
 variable "node_env" {
   type        = string
   default     = "production"
@@ -52,6 +57,12 @@ variable "min_instance_count" {
 variable "deployment_name" {
   type        = string
   description = "Name prefix for created resources. Defaults to `retool`."
+  default     = "retool"
+}
+
+variable "secrets_namespace" {
+  type        = string
+  description = "Namespace for secrets. Defaults to `retool`."
   default     = "retool"
 }
 
